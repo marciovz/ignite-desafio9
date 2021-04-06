@@ -28,7 +28,7 @@ describe('Create session authenticated', () => {
   });
 
   afterAll(async () => {
-//    await connection.dropDatabase();
+    await connection.dropDatabase();
     await connection.close();
   });
 
