@@ -73,4 +73,69 @@ describe('Create a new Statement', () => {
     expect(responseStatement.body.message).toEqual('JWT invalid token!');
   })
 
+
+  it('should be able to create a new withdraw statement', async () => {
+    const responseToken = await request(app).post('/api/v1/sessions').send({
+      email: 'john.due@email.com',
+      password: '123456'
+    })    
+    const { token } = responseToken.body;
+
+    await request(app).post('/api/v1/statements/deposit')
+      .send({
+        description: 'deposit of 900',
+        amount: 900
+      })
+      .set({
+        Authorization: `Bearer ${token}`
+      })
+
+
+    const responseStatement = await request(app).post('/api/v1/statements/withdraw')
+      .send({
+        description: 'withdraw of 300',
+        amount: 300
+      })
+      .set({
+        Authorization: `Bearer ${token}`
+      })      
+
+    expect(responseStatement.status).toBe(201);
+    expect(responseStatement.body).toHaveProperty('id');
+    expect(responseStatement.body.type).toEqual('withdraw');
+    expect(responseStatement.body.amount).toEqual(300);
+  })
+
+
+  it('should not be able to create a new withdraw statement with insufficient balance', async () => {
+    const responseToken = await request(app).post('/api/v1/sessions').send({
+      email: 'john.due@email.com',
+      password: '123456'
+    })    
+    const { token } = responseToken.body;
+
+    await request(app).post('/api/v1/statements/deposit')
+      .send({
+        description: 'deposit of 100',
+        amount: 100
+      })
+      .set({
+        Authorization: `Bearer ${token}`
+      })
+
+
+    const responseStatement = await request(app).post('/api/v1/statements/withdraw')
+      .send({
+        description: 'withdraw of 300',
+        amount: 300
+      })
+      .set({
+        Authorization: `Bearer ${token}`
+      })      
+
+    expect(responseStatement.status).toBe(400);
+    expect(responseStatement.body).toHaveProperty('message');
+    expect(responseStatement.body.message).toEqual('Insufficient funds');
+  })
+
 });
